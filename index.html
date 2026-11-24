@@ -1671,7 +1671,7 @@ function renderPlan(){
   if(P.vals.T === undefined){ P.vals.T = ''; P.user.T = false; }
   if(P.vals.U === undefined){ P.vals.U = ''; P.user.U = false; }
   // ช่อง "เวลาซ่อม t (ชม.)" คู่กับช่อง M: ทั้งสองช่องเก็บเฉพาะค่าที่พิมพ์ · ผลไปแสดงในกล่อง M 3 กล่อง (ไม่เติมค่าทับกัน)
-  const inputs = goal ? (P.view === 'cap' ? ['R','M','A'] : ['R','U','M','T','A']).map(k => `<div class="ps-f"><div class="lbl" style="color:var(--${k === 'M' || k === 'T' ? 'Mtx' : k === 'A' ? 'Atx' : 'R'})">${k === 'R' ? 'R โอกาสไม่เสีย (%)' : k === 'U' ? 'เวลา t ของ R (ชม.)' : k === 'M' ? 'M เป้าหมาย (%)' : k === 'T' ? 'เวลาซ่อม t (ชม.)' : k + ' (%)'}</div>
+  const inputs = goal ? (P.view === 'cap' ? ['R','M','A'] : ['R','M','T','A']).map(k => `<div class="ps-f"><div class="lbl" style="color:var(--${k === 'M' || k === 'T' ? 'Mtx' : k === 'A' ? 'Atx' : 'R'})">${k === 'R' ? 'R โอกาสไม่เสีย (%)' : k === 'U' ? 'เวลา t ของ R (ชม.)' : k === 'M' ? 'M เป้าหมาย (%)' : k === 'T' ? 'เวลาซ่อม t (ชม.)' : k + ' (%)'}</div>
         <div class="inp" id="box${k}"><input type="number" inputmode="decimal" step="any" min="0" ${k === 'T' || k === 'U' ? '' : 'max="100"'} id="in${k}" data-pin="${k}" placeholder="–"><span>${k === 'T' || k === 'U' ? 'ชม.' : '%'}</span></div>
         <div class="curv" id="cur${k}"></div><div class="fielderr" id="err${k}"></div><div class="boxhint" id="hint${k}"></div></div>`).join('')
       + (B.meth === 'wb' ? `<div class="ps-f wide"><div class="lbl" style="color:var(--R)">β เป้าหมาย (Weibull) ${info('pBeta')}</div><div class="inp" id="boxB"><input type="number" inputmode="decimal" step="0.01" min="0.1" max="10" id="inB" value="${esc(P.bT || '')}"></div><div class="boxhint" id="hintB"></div></div>` : '')
@@ -1919,7 +1919,7 @@ function paintPlan(){
     const cm = $('curM'); if(cm && P.view !== 'cap') { const hT = !!(o.M && o.M.hasT), T0 = hT ? o.M.T : B.mttr; cm.innerHTML = fin(T0) && B.mttr > 0 ? `ก่อนปรับ <b>${pctTxt(mFwd(B, T0), 2)}%</b> (ที่ ${fmt(T0, 2)} ชม.${hT ? '' : ' = MTTR'})` : ''; }
     { const iU = $('inU'), bU = $('boxU'); if(iU && bU && P.view !== 'cap'){ if(!P.user.U){ if(document.activeElement !== iU) iU.value = VIEWS[P.view].m; bU.classList.add('auto'); } else bU.classList.remove('auto'); } }
     { const iT = $('inT'), bT = $('boxT'); if(iT && bT && P.view !== 'cap'){ if(!P.user.T){ if(document.activeElement !== iT && fin(B.mttr)) iT.value = fmt(B.mttr, 2); bT.classList.add('auto'); } else bT.classList.remove('auto'); } }
-    const ct = $('curT'); if(ct) ct.innerHTML = o.plan ? (o.plan.impossible ? '<span style="color:var(--bad)">t = 0 แต่ M > 0: ทำไม่ได้ภายใต้แบบจำลอง</span>' : (() => { const lim = Math.min(o.plan.limM, o.plan.limA); return o.plan.by === 'cur' ? `<span style="color:var(--Atx);font-weight:600">ผ่านเป้าแล้ว</span> เวลาซ่อมเฉลี่ยตอนนี้ ${hm(B.mttr)} ไม่เกินเพดาน ${hm(lim)}` : `<span style="color:var(--Mtx);font-weight:600">ต้องลดเวลาซ่อมเฉลี่ยเหลือไม่เกิน ${hm(lim)}</span> (ตอนนี้ ${hm(B.mttr)}) ${o.plan.bind === 'M' ? `จึงจะซ่อมเสร็จ ${pctTxt(o.M.M, 2)}% ภายใน ${fmt(o.M.T, 2)} ชม.` : 'เพื่อไม่ให้ Availability ต่ำกว่าเดิม'}`; })()) : ''; }
+    const ct = $('curT'); if(ct) ct.innerHTML = ''; }
   paintMBox(o, B);
   { const hb = $('hintB'), ib = $('inB'), bb = $('boxB'); if(hb && ib){ const b0 = B.meth === 'wb' && B.model.w ? B.model.w.beta : 1, own = String(P.bT || '').trim() !== '';
       // ช่อง β ทำงานแบบช่อง R/M/A: ไม่ได้พิมพ์เอง → แสดงค่าที่ระบบใช้ (สีเขียว) · พิมพ์ทับได้ · ลบทิ้ง = กลับเป็นค่าอัตโนมัติ
