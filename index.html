@@ -945,7 +945,7 @@ const S = {
   plan: null, py: { status:'idle', result:null, err:'' }, charts: {}
 };
 function resetPlan(){
-  S.plan = { mode:'goal', view:'month', unit:'', comp:'', vals:{R:'',M:'',T:'',A:''}, user:{R:false,M:false,T:false,A:false},
+  S.plan = { mode:'goal', view:'month', unit:'', comp:'', vals:{R:'',U:'',M:'',T:'',A:''}, user:{R:false,U:false,M:false,T:false,A:false},
              fix:'mttr', fixVal:'', tR:'', tM:'', tCalc:'', rc:{ tab:'mtbf', method:'', R:'90', res:null }, gMethod:'', mMethod:'', gSub:'improve', bT:'', sMtbf:null, sMttr:null, sView:'month', cost:20000, asset:30000000 };
 }
 resetPlan();
@@ -1664,14 +1664,15 @@ function renderPlan(){
   if(P.unit && !B.u) P.unit = '';
   const A0 = B.mtbf / (B.mtbf + B.mttr) * 100;
   P.mode = 'goal';   // ตัดโหมดปรับค่าจำลอง (แถบเลื่อน) ออก เหลือแค่ตั้งเป้าหมาย
-  const goal = P.mode === 'goal', V0 = VIEWS[P.view] || VIEWS.month, VS = VIEWS[P.sView] || VIEWS.month;
+  const goal = P.mode === 'goal', V0 = pV() || VIEWS.month, VS = VIEWS[P.sView] || VIEWS.month;
   if(P.mode === 'slide'){ if(P.sMtbf === null) P.sMtbf = B.mtbf; if(P.sMttr === null) P.sMttr = B.mttr; }
   const segBtn = (attr, val, on, txt, extra = '') => `<button data-${attr}="${val}" class="${on ? 'on' : ''}" ${extra}>${txt}</button>`;
   // แถบบน: ซ้าย = ช่องกรอก (ตั้งเป้าหมาย: R / M / A (+β) · ปรับค่าจำลอง: แถบเลื่อน MTBF / MTTR) · ขวา = เลือกหม้อแปลง ชนิดปัญหา มุมมอง สูตร R
   if(P.vals.T === undefined){ P.vals.T = ''; P.user.T = false; }
+  if(P.vals.U === undefined){ P.vals.U = ''; P.user.U = false; }
   // ช่อง "เวลาซ่อม t (ชม.)" คู่กับช่อง M: ทั้งสองช่องเก็บเฉพาะค่าที่พิมพ์ · ผลไปแสดงในกล่อง M 3 กล่อง (ไม่เติมค่าทับกัน)
-  const inputs = goal ? (P.view === 'cap' ? ['R','M','A'] : ['R','M','T','A']).map(k => `<div class="ps-f"><div class="lbl" style="color:var(--${k === 'M' || k === 'T' ? 'Mtx' : k === 'A' ? 'Atx' : 'R'})">${k === 'R' ? 'R โอกาสไม่เสีย (%)' : k === 'M' ? 'M เป้าหมาย (%)' : k === 'T' ? 'เวลาซ่อม t (ชม.)' : k + ' (%)'}</div>
-        <div class="inp" id="box${k}"><input type="number" inputmode="decimal" step="any" min="0" ${k === 'T' ? '' : 'max="100"'} id="in${k}" data-pin="${k}" placeholder="–"><span>${k === 'T' ? 'ชม.' : '%'}</span></div>
+  const inputs = goal ? (P.view === 'cap' ? ['R','M','A'] : ['R','U','M','T','A']).map(k => `<div class="ps-f"><div class="lbl" style="color:var(--${k === 'M' || k === 'T' ? 'Mtx' : k === 'A' ? 'Atx' : 'R'})">${k === 'R' ? 'R โอกาสไม่เสีย (%)' : k === 'U' ? 'เวลา t ของ R (ชม.)' : k === 'M' ? 'M เป้าหมาย (%)' : k === 'T' ? 'เวลาซ่อม t (ชม.)' : k + ' (%)'}</div>
+        <div class="inp" id="box${k}"><input type="number" inputmode="decimal" step="any" min="0" ${k === 'T' || k === 'U' ? '' : 'max="100"'} id="in${k}" data-pin="${k}" placeholder="–"><span>${k === 'T' || k === 'U' ? 'ชม.' : '%'}</span></div>
         <div class="curv" id="cur${k}"></div><div class="fielderr" id="err${k}"></div><div class="boxhint" id="hint${k}"></div></div>`).join('')
       + (B.meth === 'wb' ? `<div class="ps-f wide"><div class="lbl" style="color:var(--R)">β เป้าหมาย (Weibull) ${info('pBeta')}</div><div class="inp" id="boxB"><input type="number" inputmode="decimal" step="0.01" min="0.1" max="10" id="inB" value="${esc(P.bT || '')}"></div><div class="boxhint" id="hintB"></div></div>` : '')
     : `<div class="ps-f wide"><div class="lbl" style="color:var(--R);display:flex;justify-content:space-between;align-items:center">MTBF (ชม.) <input type="number" class="fld" id="sMtbfN" value="${+P.sMtbf.toFixed(1)}" min="1" step="any" style="width:110px;padding:3px 8px;text-align:right"></div>
@@ -1708,9 +1709,9 @@ function renderPlan(){
   bind('inB', e => { P.bT = e.target.value; paintPlan(); });
   { const ib = $('inB'); if(ib) ib.addEventListener('blur', () => paintPlan()); }
   bind('inFix', e => { P.fixVal = e.target.value; paintPlan(); });
-  ['R','M','T','A'].forEach(k => bind('in' + k, e => onPlanInput(k, e.target.value)));
+  ['R','U','M','T','A'].forEach(k => bind('in' + k, e => onPlanInput(k, e.target.value)));
   $('planReset').onclick = () => { const keep = { unit: P.unit, comp: P.comp, mode: P.mode }; resetPlan(); Object.assign(S.plan, keep); renderPlan(); };
-  if(P.mode === 'goal'){ ['R','M','T','A'].forEach(k => { if(P.user[k] && $('in' + k)) $('in' + k).value = P.vals[k]; }); }
+  if(P.mode === 'goal'){ ['R','U','M','T','A'].forEach(k => { if(P.user[k] && $('in' + k)) $('in' + k).value = P.vals[k]; }); }
   if(P.mode === 'slide'){   // แถบเลื่อนอยู่ในแถบบน: ลาก/พิมพ์แล้วอัปเดตเฉพาะผลด้านล่าง
     let raf = 0; const live = () => { if(raf) return; raf = requestAnimationFrame(() => { raf = 0; paintSlideRes(planBase()); }); };
     const num = (k, v) => { const x = parseFloat(v); if(fin(x) && x > 0){ P[k] = x; const sl = $(k); sl.value = Math.min(Math.max(x, +sl.min), +sl.max); live(); } };
@@ -1723,6 +1724,7 @@ function renderPlan(){
   }
   paintPlan();
 }
+function pV(){ const P = S.plan, b = VIEWS[P.view], x = parseFloat(P.vals.U); return b && P.view !== 'cap' && P.user.U && fin(x) && x > 0 ? Object.assign({}, b, { m: x, custom: true }) : b; }
 function onPlanInput(k, v){
   const P = S.plan; P.vals[k] = v; const has = v.trim() !== '';
   P.user[k] = has;
@@ -1786,7 +1788,7 @@ function planCalc(){
     // มุมมองค่าปัจจุบันมีแค่ R และ M (ไม่มีช่องและการ์ด A)
     return o;
   }
-  const V = VIEWS[P.view];
+  const V = pV();
   const fwdR = mtbf => relR(B.model, V.m, mtbf) * 100, fwdM = mttr => mFwd(B, V.r, mttr);
   const hasR = fin(R), hasM = fin(M), hasA = fin(A);
   // R เป้าหมาย → เวลา t ที่ R(t) = เป้า ตามไฟล์ของหน่วยงาน · MTBF จริงและ β, η เดิมคงไว้ (ไม่ปรับ MTBF)
@@ -1899,22 +1901,25 @@ function paintPlan(){
   if(P.view === 'cap'){
     hint('R', o.R ? `= t ${fmt(o.R.t, 1)} ชม.${fLine(o.R)}` : ''); hint('M', o.M ? `= t ${hm(o.M.t, 1)}` : '');
   } else {
-    hint('R', o.R ? (o.R.timeOnly && P.user.R ? `= เวลา t ${fmt(o.R.tT, 1)} ชม. (ไม่ใช่ MTBF)` : `= MTBF ${fmt(o.R.mtbf, 1)} ชม. (โอกาสเสีย ${pctTxt(100 - o.R.R, 2)}%)`) : ''); hint('M', o.M && o.M.user && fin(o.M.t0) ? `= ซ่อมเสร็จภายใน ${fmt(o.M.t0, 2)} ชม.` : '');
+    { const rr = pct(P.vals.R), tk = P.user.R && !B.noMtbf && fin(rr) ? (B.meth === 'wb' && B.model.w ? relTW(B.model, rr / 100) : relTE(B.model, rr / 100)) : NaN, keep = fin(tk) && tk > 0 ? `<br>= รักษา R นี้ได้ ${fmt(tk, 0)} ชม. (≈ ${fmt(tk / 720, 1)} เดือน)` : '';
+      hint('R', o.R ? (o.R.timeOnly && P.user.R ? `= เวลา t ${fmt(o.R.tT, 1)} ชม. (ไม่ใช่ MTBF)` : `= MTBF ${fmt(o.R.mtbf, 1)} ชม. (โอกาสเสีย ${pctTxt(100 - o.R.R, 2)}%)`) + keep : ''); }
+    hint('U', P.user.U ? '' : `= ตามมุมมอง (${VIEWS[P.view].name}) · พิมพ์ทับได้`); hint('M', o.M && o.M.user && fin(o.M.t0) ? `= ซ่อมเสร็จภายใน ${fmt(o.M.t0, 2)} ชม.` : '');
     if(B.noMtbf && (P.user.R || P.user.A)){ const why = '<span style="color:var(--bad)">คำนวณไม่ได้: หม้อแปลงนี้มีเหตุครั้งเดียว (ไม่มี MTBF)</span>'; if(P.user.R) hint('R', why); }
     const mW = false, bM = $('boxM'); if(bM) bM.classList.toggle('worse', !!mW);
-    if(mW){ const h = $('hintM'); if(h) h.innerHTML += `<div style="color:var(--bad);font-weight:600">เป้าหมายนี้แย่กว่าค่าจริง (M ปัจจุบัน ${pctTxt((1 - Math.exp(-VIEWS[P.view].r / B.mttr)) * 100, 2)}%)</div>`; }
+    if(mW){ const h = $('hintM'); if(h) h.innerHTML += `<div style="color:var(--bad);font-weight:600">เป้าหมายนี้แย่กว่าค่าจริง (M ปัจจุบัน ${pctTxt((1 - Math.exp(-pV().r / B.mttr)) * 100, 2)}%)</div>`; }
     hint('T', o.tc ? `R(t) โอกาสเสีย Exponential ${pctTxt(100 - o.tc.RE, 2)}%${fin(o.tc.RW) ? ` · Weibull ${pctTxt(100 - o.tc.RW, 2)}%` : ''} · ใช้ ${recName(B.model)}` : '');
   }
   if(P.view !== 'cap'){ const lowA = !(o.A && o.A.user) && P.user.R && o.A && fin(o.A.A) && pctTxt(o.A.A, 2) !== pctTxt(o.A0, 2) && o.A.A < o.A0;
     hint('A', o.M && o.M.derived === 'A' ? `= MTTR ต้องได้ ≤ ${hm(o.M.mttr)}` : lowA ? '<span style="color:var(--Mtx)">A ลดลง · กรอก A เองถ้าอยากคงไว้</span>' : ''); }
   else hint('A', '');
   if(o.tErr){ const a = $('errTR'), b = $('errTM'); if(a) a.textContent = o.tErr.R ? 'ต้องมากกว่า 0' : ''; if(b) b.textContent = o.tErr.M ? 'ต้องมากกว่า 0' : ''; }
-  { const V0 = VIEWS[P.view], cur = { R: B.noMtbf ? NaN : relR(B.model, V0.m) * 100, M: (1 - Math.exp(-V0.r / B.mttr)) * 100, A: B.noMtbf ? NaN : B.mtbf / (B.mtbf + B.mttr) * 100 };
+  { const V0 = pV(), cur = { R: B.noMtbf ? NaN : relR(B.model, V0.m) * 100, M: (1 - Math.exp(-V0.r / B.mttr)) * 100, A: B.noMtbf ? NaN : B.mtbf / (B.mtbf + B.mttr) * 100 };
     ['R','M','A'].forEach(k => { const c = $('cur' + k); if(c) c.innerHTML = `ก่อนปรับ <b>${fin(cur[k]) ? pctTxt(cur[k], 2) + '%' : '–'}</b>`; });
     // ช่อง M: ไม่มี t กำหนดเอง → กรอก M แล้วบอกว่าตอนนี้ซ่อมเสร็จ M% ภายในกี่ชั่วโมง · ยังไม่กรอก = แสดง MTTR จริง
     const cm = $('curM'); if(cm && P.view !== 'cap') { const hT = !!(o.M && o.M.hasT), T0 = hT ? o.M.T : B.mttr; cm.innerHTML = fin(T0) && B.mttr > 0 ? `ก่อนปรับ <b>${pctTxt(mFwd(B, T0), 2)}%</b> (ที่ ${fmt(T0, 2)} ชม.${hT ? '' : ' = MTTR'})` : ''; }
+    { const iU = $('inU'), bU = $('boxU'); if(iU && bU && P.view !== 'cap'){ if(!P.user.U){ if(document.activeElement !== iU) iU.value = VIEWS[P.view].m; bU.classList.add('auto'); } else bU.classList.remove('auto'); } }
     { const iT = $('inT'), bT = $('boxT'); if(iT && bT && P.view !== 'cap'){ if(!P.user.T){ if(document.activeElement !== iT && fin(B.mttr)) iT.value = fmt(B.mttr, 2); bT.classList.add('auto'); } else bT.classList.remove('auto'); } }
-    const ct = $('curT'); if(ct) ct.innerHTML = o.plan ? (o.plan.impossible ? '<span style="color:var(--bad)">t = 0 แต่ M > 0: ทำไม่ได้ภายใต้แบบจำลอง</span>' : `<span style="color:var(--Mtx);font-weight:600">MTTR ต้องไม่เกิน ${hm(Math.min(o.plan.limM, o.plan.limA))}</span> (เงื่อนไข ${o.plan.bind} เป็นตัวกำหนด)`) : ''; }
+    const ct = $('curT'); if(ct) ct.innerHTML = o.plan ? (o.plan.impossible ? '<span style="color:var(--bad)">t = 0 แต่ M > 0: ทำไม่ได้ภายใต้แบบจำลอง</span>' : (() => { const lim = Math.min(o.plan.limM, o.plan.limA); return o.plan.by === 'cur' ? `<span style="color:var(--Atx);font-weight:600">ผ่านเป้าแล้ว</span> เวลาซ่อมเฉลี่ยตอนนี้ ${hm(B.mttr)} ไม่เกินเพดาน ${hm(lim)}` : `<span style="color:var(--Mtx);font-weight:600">ต้องลดเวลาซ่อมเฉลี่ยเหลือไม่เกิน ${hm(lim)}</span> (ตอนนี้ ${hm(B.mttr)}) ${o.plan.bind === 'M' ? `จึงจะซ่อมเสร็จ ${pctTxt(o.M.M, 2)}% ภายใน ${fmt(o.M.T, 2)} ชม.` : 'เพื่อไม่ให้ Availability ต่ำกว่าเดิม'}`; })()) : ''; }
   paintMBox(o, B);
   { const hb = $('hintB'), ib = $('inB'), bb = $('boxB'); if(hb && ib){ const b0 = B.meth === 'wb' && B.model.w ? B.model.w.beta : 1, own = String(P.bT || '').trim() !== '';
       // ช่อง β ทำงานแบบช่อง R/M/A: ไม่ได้พิมพ์เอง → แสดงค่าที่ระบบใช้ (สีเขียว) · พิมพ์ทับได้ · ลบทิ้ง = กลับเป็นค่าอัตโนมัติ
@@ -1948,7 +1953,7 @@ function paintPlan(){
        : o.A ? card('A', 'Availability', 'A ปัจจุบัน → A เป้าหมาย', `<span style="font-size:22px;color:var(--soft)">${fmt(o.A0, 2)}% →</span> ${pctTxt(o.A.A, 2)}`, '%', passBadge(o.A.A) + lowerNote(o))
              : card('A', 'Availability', 'A ที่ได้', '–', '', 'กรอก R หรือ M เพื่อดู A หรือกรอก A (%) เพื่อหา MTBF หรือ MTTR ที่ต้องมี');
   } else {
-    const V = VIEWS[P.view], fromA = o.A && o.A.fromA;
+    const V = pV(), fromA = o.A && o.A.fromA;
     const rLbl = o.R ? (o.R.derived ? `MTBF ที่ต้องมี (คำนวณจาก M และ A)` : fromA && !fixM ? 'MTBF (ตรึงไว้)' : 'MTBF ที่ต้องมี') : '';
     const M0 = B.model, isW = M0.rec === 'wb';
     cR = o.R && o.R.timeOnly && P.user.R
@@ -1996,7 +2001,7 @@ function paintPlan(){
 function planTimeCard(o, B){
   const P = S.plan;
   if(P.view === 'cap' || P.gSub !== 'time') return '';
-  const V = VIEWS[P.view], m = B.model, W = B.meth === 'wb', R0 = relR(m, V.m) * 100;
+  const V = pV(), m = B.model, W = B.meth === 'wb', R0 = relR(m, V.m) * 100;
   const tOf = x => W ? relTW(m, x / 100) : relTE(m, x / 100);
   const has = o.R && o.R.timeOnly && P.user.R;
   const tag = (c, t) => `<span class="ttag ${c}">${t}</span>`;
@@ -2048,7 +2053,7 @@ function planModelsCard(o, B){
   const P = S.plan;
   if(P.view === 'cap') return '';
   const hasT = !!(P.user.R && o.R && !o.R.derived);   // มี R เป้าหมาย → แสดงแถว MTBF เป้าหมาย
-  const V = VIEWS[P.view], raw = B.raw, R = hasT ? o.R.R : NaN, t = V.m;
+  const V = pV(), raw = B.raw, R = hasT ? o.R.R : NaN, t = V.m;
   const head = `<div class="card" id="mdlCard"><h3>Exponential กับ Weibull</h3><div class="note" style="margin-top:2px">${hasT ? `R เป้าหมาย ${pctTxt(R, 2)}% ที่ ${t.toLocaleString('en-US')} ชม.` : `ค่าปัจจุบันที่ ${t.toLocaleString('en-US')} ชม. · กรอก R เพื่อดู MTBF เป้าหมายของแต่ละสูตร`} · R(t) นับจากหลังซ่อมเสร็จ (ต่างจาก R บนหน้าหลักที่นับเดือนไหนก็ได้)</div>`;
   if(!raw || !raw.ok) return head + `<div class="sub" style="margin-top:8px">${raw && raw.n > 0 ? `มี TBF ${raw.n} ค่า (น้อยกว่า 3)` : 'ยังไม่ได้เลือกหม้อแปลง หรือไม่มี TBF'} จึงเปรียบเทียบไม่ได้ · ตารางใช้ Exponential จาก MTBF</div></div>`;
   const kv2 = (k, v, big) => `<div class="rck"><span>${k}</span><b${big ? ' style="font-size:18px"' : ''}>${v}</b></div>`;
@@ -2095,7 +2100,7 @@ function planMCard(o, B){
 function planCmpCard(o, B){
   const P = S.plan;
   if(P.view === 'cap') return capYearCard(o, B);
-  const V = VIEWS[P.view];
+  const V = pV();
   const tB = o.R ? o.R.mtbf : o.A && fin(o.A.mtbf) ? o.A.mtbf : B.mtbf, tR = o.M ? o.M.mttr : o.A && fin(o.A.mttr) ? o.A.mttr : B.mttr;
   if(!o.R && !o.M && !(o.A && o.A.user)) return `<div class="card"><h3>เปรียบเทียบ ก่อน / หลังตั้งเป้าหมาย</h3><div class="sub">กรอกเป้าหมาย R, M หรือ A ทางซ้าย เพื่อดูว่า${B.u ? ` ${esc(B.src)}` : 'หม้อแปลง'}จะดีขึ้นแค่ไหน</div></div>`;
   const m = (mtbf, mttr, md = B.model) => { const A = mtbf / (mtbf + mttr) * 100, R = fin(mtbf) ? relR(md, V.m, mtbf) * 100 : NaN; return { mtbf, mttr, R, M: (1 - Math.exp(-V.r / mttr)) * 100, A, n: 8760 / mtbf, dt: 8760 * (1 - A / 100), risk: (1 - R / 100) * P.asset }; };
