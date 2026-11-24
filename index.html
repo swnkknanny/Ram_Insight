@@ -1686,7 +1686,7 @@ function renderPlan(){
   const pick = `<div><div class="lbl">มุมมอง</div><div class="seg">${goal ? segBtn('pview', 'month', P.view === 'month', 'รายเดือน') + segBtn('pview', 'year', P.view === 'year', 'รายปี') : segBtn('sview', 'month', P.sView === 'month', 'รายเดือน') + segBtn('sview', 'year', P.sView === 'year', 'รายปี')}</div></div>
       ${goal ? `<div><div class="lbl">สูตร R ${info('planInput')}</div><div class="seg">${segBtn('gm', 'exp', B.meth === 'exp', 'Exponential' + (B.rec === 'exp' ? ' (แนะนำ)' : ''))}${segBtn('gm', 'wb', B.meth === 'wb', 'Weibull' + (B.rec === 'wb' ? ' (แนะนำ)' : ''), B.model.w ? '' : 'disabled title="ข้อมูลไม่พอสำหรับ Weibull"')}</div></div>
       <div><div class="lbl" style="color:var(--Mtx)">สูตร M</div><div class="seg">${segBtn('mm', 'exp', B.mmeth === 'exp', 'Exponential' + (B.recM === 'exp' ? ' (แนะนำ)' : ''))}${segBtn('mm', 'wb', B.mmeth === 'wb', 'Weibull' + (B.recM === 'wb' ? ' (แนะนำ)' : ''), B.tt && B.tt.w ? '' : 'disabled title="ข้อมูลเวลาซ่อมไม่พอสำหรับ Weibull"')}</div></div>` : ''}`;
-  const baseTxt = `${B.u ? 'ค่าจริงของ ' + esc(B.src) : 'ค่าเริ่มต้น'}: MTBF <b>${B.noMtbf ? '–' : fmt(B.mtbf, 1) + ' ชม.'}</b> · MTTR <b>${fmt(B.mttr, 2)} ชม.</b> · A <b>${B.noMtbf ? '–' : fmt(A0, 2) + '%'}</b> · t = ${(goal ? V0 : VS).m.toLocaleString('en-US')} ชม. (R นับจากหลังซ่อมเสร็จ)`;
+  const baseTxt = `${B.u ? 'ค่าจริงของ ' + esc(B.src) : 'ค่าเริ่มต้น'}: MTBF <b>${B.noMtbf ? '–' : fmt(B.mtbf, 2) + ' ชม.'}</b> · MTTR <b>${fmt(B.mttr, 2)} ชม.</b> · A <b>${B.noMtbf ? '–' : fmt(A0, 2) + '%'}</b> · t = ${(goal ? V0 : VS).m.toLocaleString('en-US')} ชม. (R นับจากหลังซ่อมเสร็จ)`;
   // หัวข้อขั้นตอน ① เลือก → ② กรอกเป้าหมาย → ③ ผลการซ่อม (M) → ④ ผลลัพธ์
   const showM = goal && P.view !== 'cap', stp = (n, txt, sub) => `<div class="step-h s${n}"><span class="n">${n}</span>${txt}${sub ? ` <small>${sub}</small>` : ''}</div>`;
   el.innerHTML = `
@@ -1902,7 +1902,7 @@ function paintPlan(){
     hint('R', o.R ? `= t ${fmt(o.R.t, 1)} ชม.${fLine(o.R)}` : ''); hint('M', o.M ? `= t ${hm(o.M.t, 1)}` : '');
   } else {
     { const rr = pct(P.vals.R), tk = P.user.R && !B.noMtbf && fin(rr) ? (B.meth === 'wb' && B.model.w ? relTW(B.model, rr / 100) : relTE(B.model, rr / 100)) : NaN, keep = fin(tk) && tk > 0 ? `<br>= รักษา R นี้ได้ ${fmt(tk, 0)} ชม. (≈ ${fmt(tk / 720, 1)} เดือน)` : '';
-      hint('R', o.R ? (o.R.timeOnly && P.user.R ? `= เวลา t ${fmt(o.R.tT, 1)} ชม. (ไม่ใช่ MTBF)` : `= MTBF ${fmt(o.R.mtbf, 1)} ชม. (โอกาสเสีย ${pctTxt(100 - o.R.R, 2)}%)`) + keep : ''); }
+      hint('R', o.R ? (o.R.timeOnly && P.user.R ? `= เวลา t ${fmt(o.R.tT, 1)} ชม. (ไม่ใช่ MTBF)` : `= MTBF ${fmt(o.R.mtbf, 2)} ชม. (โอกาสเสีย ${pctTxt(100 - o.R.R, 2)}%)`) + keep : ''); }
     hint('U', P.user.U ? '' : `= ตามมุมมอง (${VIEWS[P.view].name}) · พิมพ์ทับได้`); hint('M', o.M && o.M.user && fin(o.M.t0) ? `= ซ่อมเสร็จภายใน ${fmt(o.M.t0, 2)} ชม.` : '');
     if(B.noMtbf && (P.user.R || P.user.A)){ const why = '<span style="color:var(--bad)">คำนวณไม่ได้: หม้อแปลงนี้มีเหตุครั้งเดียว (ไม่มี MTBF)</span>'; if(P.user.R) hint('R', why); }
     const mW = false, bM = $('boxM'); if(bM) bM.classList.toggle('worse', !!mW);
@@ -2104,7 +2104,7 @@ function planCmpCard(o, B){
   const m = (mtbf, mttr, md = B.model) => { const A = mtbf / (mtbf + mttr) * 100, R = fin(mtbf) ? relR(md, V.m, mtbf) * 100 : NaN; return { mtbf, mttr, R, M: (1 - Math.exp(-V.r / mttr)) * 100, A, n: 8760 / mtbf, dt: 8760 * (1 - A / 100), risk: (1 - R / 100) * P.asset }; };
   const nb = B.noMtbf ? NaN : 1, a = m(B.mtbf * nb, B.mttr), t = m(tB * nb, tR, o.R && o.R.model ? o.R.model : B.model), per = P.view === 'year' ? '1 ปี' : '1 เดือน';
   // กลุ่ม ① สิ่งที่ต้องทำให้ได้ (ไม่ตัดสินดี/ไม่ดี: ป้ายส้ม "ต้องได้ ≥ / ≤ ค่าเป้า") · กลุ่ม ② ผลที่ได้ (ดีขึ้น / เท่าเดิม / ต้องได้ ≥ / ≤ ค่าตอนนี้)
-  const need = [['MTBF', 'var(--R)', a.mtbf, t.mtbf, fH, '≥'], ['MTTR', 'var(--Mtx)', a.mttr, t.mttr, v => hm(v), '≤']];
+  const need = [['MTBF', 'var(--R)', a.mtbf, t.mtbf, v => fmt(v, 2) + ' ชม.', '≥'], ['MTTR', 'var(--Mtx)', a.mttr, t.mttr, v => hm(v), '≤']];
   // ผลที่ได้: R โอกาสไม่เสีย · Maintainability · Availability (นับในแถบสรุป) + F โอกาสเสีย (= 100 − R แถวประกอบ ไม่นับซ้ำ)
   // แถว M: ไม่มี t กำหนดเอง → "ซ่อมเสร็จ M% ภายใน" (ชม.) ก่อน = จาก MTTR จริง · หลัง = จาก MTTR หลังปรับ · ไม่กรอก M = ไม่มีแถวนี้
   const fT = v => fmt(v, 2) + ' ชม.', mRow = o.M && o.M.hasT ? [`Maintainability (ซ่อมเสร็จภายใน ${fmt(o.M.T, 2)} ชม.)`, 'var(--Mtx)', o.M.M0, o.plan && !o.plan.impossible ? o.M.M1 : o.M.M0, fP, 1] : o.M && o.M.user ? [`Maintainability (กรอกเวลาซ่อมเพื่อดู M%)`, 'var(--Mtx)', NaN, NaN, fP, 1, 'กรอกเวลาซ่อมเพื่อดู M% ก่อนปรับ'] : o.M && false ? [`Maintainability (ซ่อมเสร็จ ${pctTxt(o.M.M, 2)}% ภายใน)`, 'var(--Mtx)', o.M.t0, o.M.t1, fT, -1] : null;
@@ -2135,7 +2135,7 @@ function planCmpCard(o, B){
   // MTBF ดูจาก Reliability · MTTR ดูจาก Maintainability: ผลต่ำกว่าเดิม (กรอกเป้าต่ำกว่าค่าเดิม) → ป้ายส้ม ต้องได้ ≥ / ≤ ค่าเดิม · นอกนั้นเปลี่ยน = ดีขึ้น
   const needSt = [sts[0], cmpState(a.mttr, t.mttr, -1)];
   const needRows = need.map(([l, col, x, y, f, op], i) => { const same0 = fin(x) && fin(y) && f(x) === f(y), worse0 = !same0 && needSt[i] === -1;   // ตัวเลขที่แสดงเท่ากัน = เท่าเดิม
-    return `<tr style="${worse0 ? 'background:#fff8ec' : ''}"><td style="font-weight:600;color:${col}">${l}</td><td class="n">${fin(x) ? f(x) : dash('ข้อมูลไม่พอ')}</td><td class="n" style="font-weight:700;color:${!fin(y) || same0 ? 'var(--text)' : worse0 ? 'var(--Mtx)' : 'var(--Atx)'}">${fin(y) ? f(y) : dash('ข้อมูลไม่พอ')}</td><td>${!fin(y) ? '' : same0 ? pill('mute', 'เท่าเดิม') : worse0 ? pill('warn', `ต้องได้ ${opx(op)} ${f(x)}`) + small(diffTxt(x, y, l === 'MTBF' ? 1 : 2, ' ชม.')) : pill('ok', 'ดีขึ้น') + small(diffTxt(x, y, l === 'MTBF' ? 1 : 2, ' ชม.'))}</td></tr>`; });
+    return `<tr style="${worse0 ? 'background:#fff8ec' : ''}"><td style="font-weight:600;color:${col}">${l}</td><td class="n">${fin(x) ? f(x) : dash('ข้อมูลไม่พอ')}</td><td class="n" style="font-weight:700;color:${!fin(y) || same0 ? 'var(--text)' : worse0 ? 'var(--Mtx)' : 'var(--Atx)'}">${fin(y) ? f(y) : dash('ข้อมูลไม่พอ')}</td><td>${!fin(y) ? '' : same0 ? pill('mute', 'เท่าเดิม') : worse0 ? pill('warn', `ต้องได้ ${opx(op)} ${f(x)}`) + small(diffTxt(x, y, 2, ' ชม.')) : pill('ok', 'ดีขึ้น') + small(diffTxt(x, y, 2, ' ชม.'))}</td></tr>`; });
   const outRows = rows.map(([l, col, x, y, f, dir, why], i) => { const st = sts[i];
     const u0 = f === fT ? ' ชม.' : ' จุด', badge = st === null ? '' : st === 0 ? pill('mute', 'เท่าเดิม') : st > 0 ? pill('ok', 'ดีขึ้น') + small(diffTxt(x, y, 2, u0)) : pill('warn', `ต้องได้ ${opx(dir > 0 ? '≥' : '≤')} ${f(x)}`) + small(diffTxt(x, y, 2, u0));
     return `<tr style="${st === -1 ? 'background:#fff8ec' : ''}"><td style="font-weight:600;color:${col}">${l}</td><td class="n">${fin(x) ? f(x) : dash(why || 'ข้อมูลไม่พอ')}</td><td class="n" style="font-weight:700;color:${st === 1 ? 'var(--Atx)' : st === -1 ? 'var(--Mtx)' : 'var(--text)'}">${fin(y) ? f(y) : dash(why || 'ข้อมูลไม่พอ')}</td><td>${badge}</td></tr>`; }).join('');
