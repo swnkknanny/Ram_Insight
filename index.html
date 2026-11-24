@@ -1912,7 +1912,8 @@ function paintPlan(){
   { const V0 = VIEWS[P.view], cur = { R: B.noMtbf ? NaN : relR(B.model, V0.m) * 100, M: (1 - Math.exp(-V0.r / B.mttr)) * 100, A: B.noMtbf ? NaN : B.mtbf / (B.mtbf + B.mttr) * 100 };
     ['R','M','A'].forEach(k => { const c = $('cur' + k); if(c) c.innerHTML = `ก่อนปรับ <b>${fin(cur[k]) ? pctTxt(cur[k], 2) + '%' : '–'}</b>`; });
     // ช่อง M: ไม่มี t กำหนดเอง → กรอก M แล้วบอกว่าตอนนี้ซ่อมเสร็จ M% ภายในกี่ชั่วโมง · ยังไม่กรอก = แสดง MTTR จริง
-    const cm = $('curM'); if(cm && P.view !== 'cap') cm.innerHTML = o.M && o.M.hasT ? `ก่อนปรับ <b>${pctTxt(o.M.M0, 2)}%</b> (ที่ ${fmt(o.M.T, 2)} ชม.)` : '';
+    const cm = $('curM'); if(cm && P.view !== 'cap') { const hT = !!(o.M && o.M.hasT), T0 = hT ? o.M.T : B.mttr; cm.innerHTML = fin(T0) && B.mttr > 0 ? `ก่อนปรับ <b>${pctTxt(mFwd(B, T0), 2)}%</b> (ที่ ${fmt(T0, 2)} ชม.${hT ? '' : ' = MTTR'})` : ''; }
+    { const iT = $('inT'), bT = $('boxT'); if(iT && bT && P.view !== 'cap'){ if(!P.user.T){ if(document.activeElement !== iT && fin(B.mttr)) iT.value = fmt(B.mttr, 2); bT.classList.add('auto'); } else bT.classList.remove('auto'); } }
     const ct = $('curT'); if(ct) ct.innerHTML = o.plan ? (o.plan.impossible ? '<span style="color:var(--bad)">t = 0 แต่ M > 0: ทำไม่ได้ภายใต้แบบจำลอง</span>' : `<span style="color:var(--Mtx);font-weight:600">MTTR ต้องไม่เกิน ${hm(Math.min(o.plan.limM, o.plan.limA))}</span> (เงื่อนไข ${o.plan.bind} เป็นตัวกำหนด)`) : ''; }
   paintMBox(o, B);
   { const hb = $('hintB'), ib = $('inB'), bb = $('boxB'); if(hb && ib){ const b0 = B.meth === 'wb' && B.model.w ? B.model.w.beta : 1, own = String(P.bT || '').trim() !== '';
